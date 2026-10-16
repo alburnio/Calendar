@@ -1,63 +1,982 @@
+
 <!DOCTYPE html>
 <html lang="ms">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Kalendar & Cuaca Malaysia 2026</title>
-    <link rel="manifest" href="manifest.json">
-    <meta name="theme-color" content="#0f172a">
     
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="manifest" href="manifest.json">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                    colors: {
+                        primary: '#0284c7',
+                        holiday: '#e11d48',
+                        school: '#d97706',
+                    },
+                    animation: {
+                        'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                        'bounce-gentle': 'bounce 2s infinite',
+                        'float': 'float 4s ease-in-out infinite',
+                        'sun-spin': 'spin 20s linear infinite',
+                        'cloud-drift': 'cloudDrift 25s linear infinite',
+                    },
+                    keyframes: {
+                        float: {
+                            '0%, 100%': { transform: 'translateY(0px)' },
+                            '50%': { transform: 'translateY(-8px)' },
+                        },
+                        cloudDrift: {
+                            '0%': { transform: 'translateX(-20px)' },
+                            '50%': { transform: 'translateX(20px)' },
+                            '100%': { transform: 'translateX(-20px)' },
+                        }
+                    }
+                }
+            }
+        }
+    </script>
     
     <style>
-        body { font-family: 'Inter', sans-serif; background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); color: #f8fafc; min-height: 100vh; }
-        .glass-panel { background: rgba(30, 41, 59, 0.75); backdrop-filter: blur(14px); border: 1px solid rgba(255, 255, 255, 0.1); }
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+            color: #f8fafc;
+            min-height: 100vh;
+        }
+
+        .weather-card-bg {
+            background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .glass-panel {
+            background: rgba(30, 41, 59, 0.75);
+            backdrop-filter: blur(14px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .calendar-day-hover {
+            transition: all 0.2s ease-in-out;
+        }
+
+        .calendar-day-hover:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3);
+        }
+
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #1e293b;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #475569;
+            border-radius: 4px;
+        }
     </style>
 </head>
-<body class="antialiased min-h-screen flex flex-col p-4 space-y-6">
+<body class="antialiased min-h-screen flex flex-col pb-10">
 
-    <header class="glass-panel p-4 rounded-2xl flex items-center justify-between">
-        <div class="flex items-center space-x-3">
-            <div class="bg-gradient-to-tr from-amber-500 to-red-600 p-3 rounded-2xl text-white">
-                <i class="fa-solid fa-calendar-days text-2xl"></i>
-            </div>
-            <div>
-                <h1 class="text-xl font-bold text-white">Kalendar Malaysia <span class="text-xs bg-red-600 px-2 py-0.5 rounded-full">2026</span></h1>
-                <p class="text-xs text-slate-400">Cuti Perayaan • Waktu Solat • Cuaca</p>
+    <header class="glass-panel sticky top-0 z-40 border-b border-slate-700/50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+            <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                <div class="flex items-center space-x-3">
+                    <div class="bg-gradient-to-tr from-amber-500 to-red-600 p-3 rounded-2xl shadow-lg shadow-amber-500/20 text-white">
+                        <i class="fa-solid fa-calendar-days text-2xl"></i>
+                    </div>
+                    <div>
+                        <h1 class="text-2xl font-extrabold tracking-tight text-white flex items-center gap-2">
+                            Kalendar Malaysia <span class="text-xs px-2.5 py-0.5 rounded-full bg-red-600/80 text-white font-medium">2026</span>
+                        </h1>
+                        <p class="text-xs text-slate-400">Cuti Perayaan • Cuti Sekolah KPM • Waktu Solat • Cuaca</p>
+                    </div>
+                </div>
+
+                <div class="flex items-center bg-slate-800/80 p-1.5 rounded-xl border border-slate-700">
+                    <div class="px-3 text-red-500 animate-bounce-gentle">
+                        <i class="fa-solid fa-location-dot text-lg"></i>
+                    </div>
+                    <select id="stateSelect" onchange="changeState()" class="bg-transparent text-sm font-semibold text-slate-200 pr-8 py-1.5 focus:outline-none cursor-pointer">
+                        <option value="Kuala Lumpur" selected class="bg-slate-800 text-white">Kuala Lumpur / Putrajaya</option>
+                        <option value="Selangor" class="bg-slate-800 text-white">Selangor</option>
+                        <option value="Johor" class="bg-slate-800 text-white">Johor</option>
+                        <option value="Penang" class="bg-slate-800 text-white">Pulau Pinang</option>
+                        <option value="Perak" class="bg-slate-800 text-white">Perak</option>
+                        <option value="Kedah" class="bg-slate-800 text-white">Kedah</option>
+                        <option value="Kelantan" class="bg-slate-800 text-white">Kelantan</option>
+                        <option value="Terengganu" class="bg-slate-800 text-white">Terengganu</option>
+                        <option value="Pahang" class="bg-slate-800 text-white">Pahang</option>
+                        <option value="Melaka" class="bg-slate-800 text-white">Melaka</option>
+                        <option value="Negeri Sembilan" class="bg-slate-800 text-white">Negeri Sembilan</option>
+                        <option value="Sabah" class="bg-slate-800 text-white">Sabah</option>
+                        <option value="Sarawak" class="bg-slate-800 text-white">Sarawak</option>
+                    </select>
+                </div>
             </div>
         </div>
     </header>
 
-    <main class="space-y-6">
-        <section class="glass-panel p-6 rounded-3xl bg-blue-600/30 border border-blue-400/30 flex justify-between items-center">
-            <div>
-                <p class="text-xs text-blue-200 uppercase font-semibold">Laporan Cuaca</p>
-                <h2 class="text-2xl font-bold text-white">Kuala Lumpur</h2>
-                <p class="text-sm text-blue-100">Hujan / Berawan</p>
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 flex-1 w-full space-y-6">
+
+        <section class="glass-panel rounded-2xl p-4 border border-slate-700/80 flex flex-col md:flex-row items-center justify-between gap-4 bg-slate-900/80">
+            <div class="flex items-center space-x-3 w-full md:w-auto">
+                <button id="toggleWeatherSoundBtn" onclick="toggleWeatherSound()" class="px-4 py-2 bg-blue-600/80 hover:bg-blue-500 text-white text-xs font-bold rounded-xl transition flex items-center gap-2 shadow-lg shadow-blue-500/20 active:scale-95">
+                    <i id="weatherSoundIcon" class="fa-solid fa-volume-high text-sm"></i>
+                    <span id="weatherSoundText">Mainkan Bunyi Cuaca</span>
+                </button>
+                <div class="text-xs text-slate-400 hidden sm:block">
+                    <span class="text-blue-300 font-semibold" id="currentSoundType">Sintesis Bunyi Cuaca</span>
+                </div>
             </div>
-            <div class="text-right">
-                <span class="text-5xl font-black text-white">31°C</span>
+
+            <div class="flex items-center justify-between md:justify-end gap-3 w-full md:w-auto bg-slate-800/80 p-2.5 rounded-xl border border-slate-700/60">
+                <div class="flex items-center space-x-3">
+                    <div class="w-9 h-9 rounded-lg bg-gradient-to-tr from-pink-500 to-rose-500 flex items-center justify-center text-white shadow-md">
+                        <i class="fa-solid fa-music text-sm" id="musicDiscIcon"></i>
+                    </div>
+                    <div class="max-w-[130px] sm:max-w-[180px] truncate">
+                        <p class="text-xs font-bold text-white truncate" id="songTitleDisplay">Pop Vibe - Energy Beat</p>
+                        <p class="text-[10px] text-pink-300">Lagu Pop Santai</p>
+                    </div>
+                </div>
+
+                <div class="flex items-center space-x-2">
+                    <button onclick="toggleMusic()" class="w-8 h-8 rounded-lg bg-pink-600 hover:bg-pink-500 text-white flex items-center justify-center transition active:scale-95 shadow-md shadow-pink-600/30">
+                        <i id="playMusicIcon" class="fa-solid fa-play text-xs"></i>
+                    </button>
+                    <div class="flex items-end space-x-0.5 h-5 px-1 bg-slate-900/50 rounded p-1">
+                        <span class="w-1 bg-pink-500 rounded-full h-2 animate-pulse"></span>
+                        <span class="w-1 bg-pink-400 rounded-full h-4 animate-bounce" style="animation-delay: 0.1s"></span>
+                        <span class="w-1 bg-pink-500 rounded-full h-3 animate-pulse" style="animation-delay: 0.2s"></span>
+                    </div>
+                </div>
+
+                <audio id="popMusicAudio" loop preload="auto">
+                    <source src="https://cdn.pixabay.com/download/audio/2022/05/27/audio_1808fbf07a.mp3?filename=pop-summer-party-115291.mp3" type="audio/mpeg">
+                </audio>
             </div>
         </section>
 
-        <section class="glass-panel p-6 rounded-3xl space-y-3">
-            <h3 class="text-md font-bold text-emerald-400 flex items-center gap-2">
-                <i class="fa-solid fa-mosque"></i> Waktu Solat
-            </h3>
-            <div class="grid grid-cols-3 gap-2 text-center text-xs">
-                <div class="bg-slate-800 p-2 rounded-xl"><p class="text-slate-400">Subuh</p><p class="font-bold text-emerald-400">05:52</p></div>
-                <div class="bg-slate-800 p-2 rounded-xl"><p class="text-slate-400">Zohor</p><p class="font-bold">13:20</p></div>
-                <div class="bg-slate-800 p-2 rounded-xl"><p class="text-slate-400">Maghrib</p><p class="font-bold text-amber-400">19:30</p></div>
+        <section class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            
+            <div class="lg:col-span-2 weather-card-bg rounded-3xl p-6 shadow-2xl border border-blue-400/30 flex flex-col justify-between relative">
+                <div id="weatherSvgContainer" class="absolute inset-0 pointer-events-none opacity-40"></div>
+
+                <div class="relative z-10 flex flex-wrap justify-between items-start gap-4">
+                    <div>
+                        <div class="flex items-center space-x-2 text-blue-100 text-xs font-bold uppercase tracking-wider bg-black/20 px-3 py-1 rounded-full w-fit">
+                            <span class="inline-block w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                            <span>Laporan Cuaca Terkini</span>
+                        </div>
+                        <h2 id="weatherLocation" class="text-3xl font-extrabold text-white mt-2">Kuala Lumpur</h2>
+                        <p id="weatherDesc" class="text-blue-100 text-sm mt-1 font-medium">Hujan Ribut / Berawan</p>
+                    </div>
+
+                    <div class="text-right">
+                        <div class="flex items-baseline justify-end">
+                            <span id="tempDisplay" class="text-6xl font-black text-white tracking-tighter">31</span>
+                            <span class="text-3xl font-light text-blue-200">°C</span>
+                        </div>
+                        <p id="feelsLike" class="text-xs text-blue-200">Rasa seperti 34°C</p>
+                    </div>
+                </div>
+
+                <div class="relative z-10 grid grid-cols-2 sm:grid-cols-4 gap-3 mt-6 pt-6 border-t border-white/10 text-white">
+                    <div class="bg-black/20 backdrop-blur-md p-3 rounded-2xl flex items-center space-x-3">
+                        <div class="text-blue-300 text-xl"><i class="fa-solid fa-droplet"></i></div>
+                        <div>
+                            <p class="text-[10px] text-blue-200 uppercase font-semibold">Kelembapan</p>
+                            <p id="humidityDisplay" class="text-sm font-bold">82%</p>
+                        </div>
+                    </div>
+                    <div class="bg-black/20 backdrop-blur-md p-3 rounded-2xl flex items-center space-x-3">
+                        <div class="text-teal-300 text-xl"><i class="fa-solid fa-wind"></i></div>
+                        <div>
+                            <p class="text-[10px] text-blue-200 uppercase font-semibold">Angin</p>
+                            <p id="windDisplay" class="text-sm font-bold">14 km/h</p>
+                        </div>
+                    </div>
+                    <div class="bg-black/20 backdrop-blur-md p-3 rounded-2xl flex items-center space-x-3">
+                        <div class="text-amber-300 text-xl"><i class="fa-solid fa-cloud-sun-rain"></i></div>
+                        <div>
+                            <p class="text-[10px] text-blue-200 uppercase font-semibold">Hujan</p>
+                            <p id="rainChanceDisplay" class="text-sm font-bold">75%</p>
+                        </div>
+                    </div>
+                    <div class="bg-black/20 backdrop-blur-md p-3 rounded-2xl flex items-center space-x-3">
+                        <div class="text-indigo-300 text-xl"><i class="fa-solid fa-eye"></i></div>
+                        <div>
+                            <p class="text-[10px] text-blue-200 uppercase font-semibold">Penglihatan</p>
+                            <p id="visibilityDisplay" class="text-sm font-bold">9 km</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="glass-panel rounded-3xl p-6 flex flex-col justify-between border border-slate-700/80">
+                <div class="flex items-center justify-between">
+                    <h3 class="text-base font-bold text-slate-200 flex items-center gap-2">
+                        <i class="fa-solid fa-mosque text-emerald-400"></i>
+                        Waktu Solat Malaysia
+                    </h3>
+                    <span class="bg-emerald-500/20 text-emerald-300 text-[10px] font-bold px-2 py-0.5 rounded-full border border-emerald-500/30">JAKIM</span>
+                </div>
+
+                <div class="grid grid-cols-2 gap-2 my-3 text-xs">
+                    <div class="bg-slate-800/80 p-2.5 rounded-xl border border-slate-700/50 flex justify-between items-center">
+                        <span class="text-slate-400 font-medium">Imsak</span>
+                        <span id="solatImsak" class="font-bold text-slate-200">05:42</span>
+                    </div>
+                    <div class="bg-slate-800/80 p-2.5 rounded-xl border border-slate-700/50 flex justify-between items-center">
+                        <span class="text-slate-400 font-medium">Subuh</span>
+                        <span id="solatSubuh" class="font-bold text-emerald-400">05:52</span>
+                    </div>
+                    <div class="bg-slate-800/80 p-2.5 rounded-xl border border-slate-700/50 flex justify-between items-center">
+                        <span class="text-slate-400 font-medium">Zohor</span>
+                        <span id="solatZohor" class="font-bold text-slate-200">13:20</span>
+                    </div>
+                    <div class="bg-slate-800/80 p-2.5 rounded-xl border border-slate-700/50 flex justify-between items-center">
+                        <span class="text-slate-400 font-medium">Asar</span>
+                        <span id="solatAsar" class="font-bold text-slate-200">16:42</span>
+                    </div>
+                    <div class="bg-slate-800/80 p-2.5 rounded-xl border border-slate-700/50 flex justify-between items-center">
+                        <span class="text-slate-400 font-medium">Maghrib</span>
+                        <span id="solatMaghrib" class="font-bold text-amber-400">19:30</span>
+                    </div>
+                    <div class="bg-slate-800/80 p-2.5 rounded-xl border border-slate-700/50 flex justify-between items-center">
+                        <span class="text-slate-400 font-medium">Isyak</span>
+                        <span id="solatIsyak" class="font-bold text-slate-200">20:43</span>
+                    </div>
+                </div>
+
+                <div class="space-y-1.5 bg-slate-800/50 p-3 rounded-xl border border-slate-700/40 text-xs">
+                    <div class="flex justify-between items-center">
+                        <span class="text-slate-400">Status Sekolah:</span>
+                        <span id="schoolStatusToday" class="font-bold text-emerald-400">Hari Persekolahan</span>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <span class="text-slate-400">Kumpulan Cuti:</span>
+                        <span id="kumpulanState" class="font-bold text-slate-200 text-[11px]">Kumpulan B</span>
+                    </div>
+                </div>
             </div>
         </section>
+
+        <section class="glass-panel rounded-3xl p-6 shadow-2xl">
+            <div class="flex flex-col sm:flex-row items-center justify-between gap-4 pb-6 border-b border-slate-700/60">
+                <div class="flex items-center space-x-4">
+                    <button onclick="changeMonth(-1)" class="w-10 h-10 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 flex items-center justify-center transition border border-slate-700 active:scale-95">
+                        <i class="fa-solid fa-chevron-left"></i>
+                    </button>
+                    <h2 id="calendarMonthYear" class="text-2xl font-extrabold text-white tracking-wide min-w-[220px] text-center">
+                        Januari 2026
+                    </h2>
+                    <button onclick="changeMonth(1)" class="w-10 h-10 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 flex items-center justify-center transition border border-slate-700 active:scale-95">
+                        <i class="fa-solid fa-chevron-right"></i>
+                    </button>
+                </div>
+
+                <div class="flex flex-wrap items-center gap-3 text-xs font-semibold">
+                    <div class="flex items-center space-x-1.5 bg-rose-500/10 border border-rose-500/30 text-rose-400 px-3 py-1.5 rounded-xl">
+                        <span class="w-2.5 h-2.5 rounded-full bg-rose-500"></span>
+                        <span>Cuti Umum</span>
+                    </div>
+                    <div class="flex items-center space-x-1.5 bg-amber-500/10 border border-amber-500/30 text-amber-400 px-3 py-1.5 rounded-xl">
+                        <span class="w-2.5 h-2.5 rounded-full bg-amber-500"></span>
+                        <span>Cuti Sekolah</span>
+                    </div>
+                    <button onclick="goToToday()" class="bg-blue-600 hover:bg-blue-500 text-white px-3.5 py-1.5 rounded-xl transition shadow-md shadow-blue-600/30">
+                        Hari Ini
+                    </button>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-7 text-center text-xs font-bold text-slate-400 my-4 uppercase tracking-wider">
+                <div class="text-rose-400">Ahad</div>
+                <div>Isnin</div>
+                <div>Selasa</div>
+                <div>Rabu</div>
+                <div>Khamis</div>
+                <div>Jumaat</div>
+                <div class="text-amber-400">Sabtu</div>
+            </div>
+
+            <div id="calendarGrid" class="grid grid-cols-7 gap-2"></div>
+        </section>
+
+        <section class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div class="glass-panel rounded-3xl p-6 border border-slate-700/80 flex flex-col justify-between">
+                <div>
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="text-lg font-bold text-rose-400 flex items-center gap-2">
+                            <i class="fa-solid fa-gift"></i>
+                            Cuti Umum Bulan Ini
+                        </h3>
+                        <span id="holidayCountBadge" class="bg-rose-500/20 text-rose-300 text-xs font-bold px-2.5 py-1 rounded-full border border-rose-500/30">0 Cuti</span>
+                    </div>
+                    <ul id="publicHolidaysList" class="space-y-2.5 text-sm"></ul>
+                </div>
+            </div>
+
+            <div class="glass-panel rounded-3xl p-6 border border-slate-700/80 flex flex-col justify-between">
+                <div>
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="text-lg font-bold text-amber-400 flex items-center gap-2">
+                            <i class="fa-solid fa-graduation-cap"></i>
+                            Takwim Cuti Sekolah KPM 2026
+                        </h3>
+                        <span class="bg-amber-500/20 text-amber-300 text-xs font-bold px-2.5 py-1 rounded-full border border-amber-500/30">Semua Penggal</span>
+                    </div>
+                    <ul id="schoolHolidaysList" class="space-y-2.5 text-sm"></ul>
+                </div>
+            </div>
+        </section>
+
+        <section class="glass-panel rounded-3xl p-6 border border-slate-700/80 shadow-2xl space-y-6">
+            <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-700/60 pb-4">
+                <div>
+                    <span class="text-xs font-bold uppercase tracking-wider text-emerald-400 bg-emerald-500/10 px-3 py-1 rounded-full border border-emerald-500/30">
+                        <i class="fa-solid fa-mobile-screen-button mr-1.5"></i>Panduan Telefon & Widget
+                    </span>
+                    <h2 class="text-xl font-extrabold text-white mt-2">Bolehkah App Ini Dijadikan Widget Di Telefon?</h2>
+                    <p class="text-xs text-slate-400 mt-1">Ya! Anda boleh memasang laman ini sebagai **Progressive Web App (PWA)** atau Widget Skrin Utama.</p>
+                </div>
+                <button onclick="toggleWidgetPreviewModal()" class="px-4 py-2.5 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-white font-bold text-xs rounded-xl shadow-lg shadow-emerald-500/20 transition flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-eye"></i>
+                    Lihat Simulasi Widget Skrin Utama
+                </button>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 text-xs text-slate-300">
+                <!-- Android Guide -->
+                <div class="bg-slate-800/60 p-5 rounded-2xl border border-slate-700/70 space-y-3">
+                    <div class="flex items-center space-x-3 text-emerald-400">
+                        <i class="fa-brands fa-android text-2xl"></i>
+                        <h3 class="text-sm font-bold text-white">Panduan Android (Google Chrome)</h3>
+                    </div>
+                    <ol class="list-decimal list-inside space-y-2 text-slate-300">
+                        <li>Buka aplikasi ini menggunakan **Google Chrome** di telefon anda.</li>
+                        <li>Tekan ikon <strong>3 Titik (Menu)</strong> di sudut atas kanan Chrome.</li>
+                        <li>Pilih <strong>"Add to Home screen"</strong> atau <strong>"Install app"</strong>.</li>
+                        <li>Tekan **Add / Tambah**. Ikon aplikasi akan muncul di Skrin Utama telefon anda!</li>
+                    </ol>
+                    <div class="bg-emerald-950/40 border border-emerald-500/30 p-2.5 rounded-xl text-emerald-300 font-medium">
+                        💡 <em>Tip Widget:</em> Pelayar pintar Android membolehkan anda letak *Web Shortcut/PWA Tile* seperti Widget untuk akses pantas waktu solat & cuaca!
+                    </div>
+                </div>
+
+                <!-- iOS Guide -->
+                <div class="bg-slate-800/60 p-5 rounded-2xl border border-slate-700/70 space-y-3">
+                    <div class="flex items-center space-x-3 text-sky-400">
+                        <i class="fa-brands fa-apple text-2xl"></i>
+                        <h3 class="text-sm font-bold text-white">Panduan iPhone / iOS (Safari)</h3>
+                    </div>
+                    <ol class="list-decimal list-inside space-y-2 text-slate-300">
+                        <li>Buka aplikasi ini di **Safari** pada iPhone anda.</li>
+                        <li>Tekan ikon <strong>Share (Kongsi)</strong> <i class="fa-solid fa-arrow-up-from-bracket text-sky-400"></i> di bahagian bawah skrin.</li>
+                        <li>Cari dan tekan <strong>"Add to Home Screen" (Tambah ke Skrin Utama)</strong>.</li>
+                        <li>Tekan **Add**. App sedia digunakan secara paparan skrin penuh!</li>
+                    </ol>
+                    <div class="bg-sky-950/40 border border-sky-500/30 p-2.5 rounded-xl text-sky-300 font-medium">
+                        📱 Pelancaran dari Skrin Utama akan membuka app ini secara skrin penuh tanpa bar URL pelayar!
+                    </div>
+                </div>
+            </div>
+        </section>
+
     </main>
 
+    <div id="widgetModal" class="fixed inset-0 bg-slate-950/85 backdrop-blur-md z-50 hidden flex items-center justify-center p-4">
+        <div class="glass-panel border border-slate-700 rounded-3xl max-w-lg w-full p-6 shadow-2xl relative space-y-5">
+            <button onclick="toggleWidgetPreviewModal()" class="absolute top-4 right-4 w-8 h-8 bg-slate-800 text-slate-400 hover:text-white rounded-full flex items-center justify-center transition">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+
+            <div class="flex items-center space-x-3">
+                <div class="p-3 rounded-2xl bg-emerald-500/20 text-emerald-400 text-xl">
+                    <i class="fa-solid fa-shapes"></i>
+                </div>
+                <div>
+                    <h3 class="text-lg font-bold text-white">Simulasi Widget Skrin Utama Telefon</h3>
+                    <p class="text-xs text-slate-400">Gambaran rupa Widget Kalendar & Cuaca di telefon anda</p>
+                </div>
+            </div>
+
+            <!-- Phone Frame Simulation -->
+            <div class="bg-slate-900 border-4 border-slate-700 rounded-[2.5rem] p-4 shadow-inner space-y-4 relative overflow-hidden">
+                <!-- Phone Status Bar -->
+                <div class="flex justify-between items-center text-[10px] text-slate-400 px-2 pt-1">
+                    <span class="font-bold text-white">09:41</span>
+                    <div class="flex items-center space-x-1.5">
+                        <i class="fa-solid fa-signal"></i>
+                        <i class="fa-solid fa-wifi"></i>
+                        <i class="fa-solid fa-battery-full"></i>
+                    </div>
+                </div>
+
+                <!-- Simulated Widget Component -->
+                <div class="weather-card-bg p-4 rounded-2xl shadow-xl border border-blue-400/40 text-white space-y-3">
+                    <div class="flex justify-between items-center">
+                        <div class="flex items-center space-x-2">
+                            <i class="fa-solid fa-cloud-sun-rain text-amber-300 text-xl"></i>
+                            <div>
+                                <p class="text-xs font-bold leading-none" id="widgetLoc">Kuala Lumpur</p>
+                                <p class="text-[10px] text-blue-200">Hujan / Berawan</p>
+                            </div>
+                        </div>
+                        <div class="text-right">
+                            <span class="text-2xl font-black" id="widgetTemp">31°C</span>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-3 gap-1.5 text-center text-[10px] bg-black/25 p-2 rounded-xl backdrop-blur-sm">
+                        <div>
+                            <p class="text-slate-300">Subuh</p>
+                            <p class="font-bold text-emerald-300" id="widgetSubuh">05:52</p>
+                        </div>
+                        <div>
+                            <p class="text-slate-300">Zohor</p>
+                            <p class="font-bold text-white" id="widgetZohor">13:20</p>
+                        </div>
+                        <div>
+                            <p class="text-slate-300">Maghrib</p>
+                            <p class="font-bold text-amber-300" id="widgetMaghrib">19:30</p>
+                        </div>
+                    </div>
+
+                    <div class="bg-blue-900/60 p-2 rounded-xl flex items-center justify-between text-[10px] border border-blue-400/30">
+                        <span class="flex items-center gap-1"><i class="fa-solid fa-calendar-check text-rose-400"></i> Cuti Seterusnya:</span>
+                        <span class="font-semibold text-rose-200">20 Mac - Aidilfitri</span>
+                    </div>
+                </div>
+
+                <!-- App Icons Grid Simulation -->
+                <div class="grid grid-cols-4 gap-3 px-2 pt-1 pb-3 text-center">
+                    <div class="flex flex-col items-center gap-1">
+                        <div class="w-10 h-10 rounded-2xl bg-gradient-to-tr from-amber-500 to-red-600 flex items-center justify-center text-white text-xs shadow-md">
+                            <i class="fa-solid fa-calendar-days"></i>
+                        </div>
+                        <span class="text-[9px] text-slate-300 font-medium">Kalendar</span>
+                    </div>
+                    <div class="flex flex-col items-center gap-1">
+                        <div class="w-10 h-10 rounded-2xl bg-green-600 flex items-center justify-center text-white text-xs shadow-md">
+                            <i class="fa-solid fa-phone"></i>
+                        </div>
+                        <span class="text-[9px] text-slate-400">Telefon</span>
+                    </div>
+                    <div class="flex flex-col items-center gap-1">
+                        <div class="w-10 h-10 rounded-2xl bg-blue-600 flex items-center justify-center text-white text-xs shadow-md">
+                            <i class="fa-solid fa-message"></i>
+                        </div>
+                        <span class="text-[9px] text-slate-400">Mesej</span>
+                    </div>
+                    <div class="flex flex-col items-center gap-1">
+                        <div class="w-10 h-10 rounded-2xl bg-purple-600 flex items-center justify-center text-white text-xs shadow-md">
+                            <i class="fa-solid fa-camera"></i>
+                        </div>
+                        <span class="text-[9px] text-slate-400">Kamera</span>
+                    </div>
+                </div>
+            </div>
+
+            <button onclick="toggleWidgetPreviewModal()" class="w-full bg-slate-800 hover:bg-slate-700 text-white font-semibold py-2.5 rounded-xl transition text-xs">
+                Tutup Simulasi
+            </button>
+        </div>
+    </div>
+
+    <div id="eventModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="glass-panel border border-slate-700 rounded-3xl max-w-md w-full p-6 shadow-2xl relative">
+            <button onclick="closeModal()" class="absolute top-4 right-4 w-8 h-8 bg-slate-800 text-slate-400 hover:text-white rounded-full flex items-center justify-center transition">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+            <div class="flex items-center space-x-3 mb-4">
+                <div id="modalIcon" class="p-3 rounded-2xl bg-rose-500/20 text-rose-400 text-xl">
+                    <i class="fa-solid fa-calendar-check"></i>
+                </div>
+                <div>
+                    <p id="modalDate" class="text-xs font-semibold text-slate-400">1 Januari 2026</p>
+                    <h3 id="modalTitle" class="text-lg font-bold text-white">Tahun Baru 2026</h3>
+                </div>
+            </div>
+            
+            <div id="modalContent" class="text-sm text-slate-300 space-y-3 bg-slate-800/50 p-4 rounded-2xl border border-slate-700/50"></div>
+
+            <!-- Personal Note / Reminder Section inside Modal -->
+            <div class="mt-4 pt-4 border-t border-slate-700/60">
+                <label class="block text-xs font-semibold text-slate-400 mb-1">Catatan Peribadi Tarikh Ini:</label>
+                <div class="flex gap-2">
+                    <input type="text" id="personalNoteInput" placeholder="Tambah nota peribadi..." class="flex-1 bg-slate-800 border border-slate-700 text-white text-xs rounded-xl px-3 py-2 focus:outline-none focus:border-blue-500">
+                    <button onclick="savePersonalNote()" class="bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold px-4 py-2 rounded-xl transition">Simpan</button>
+                </div>
+                <p id="savedNoteDisplay" class="text-xs text-amber-300 mt-2 font-medium italic"></p>
+            </div>
+
+            <button onclick="closeModal()" class="mt-5 w-full bg-slate-800 hover:bg-slate-700 text-white font-semibold py-2.5 rounded-xl transition">
+                Tutup
+            </button>
+        </div>
+    </div>
+
     <script>
-        if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('sw.js').catch(err => console.log(err));
+        const publicHolidays2026 = [
+            { date: '2026-01-01', title: 'Tahun Baru 2026', desc: 'Cuti umum di kebanyakan negeri kecuali Johor, Kedah, Kelantan, Perlis & Terengganu.' },
+            { date: '2026-01-14', title: 'Hari Keputeraan YDP Besar N.Sembilan', desc: 'Cuti Negeri Sembilan sahaja.' },
+            { date: '2026-02-01', title: 'Hari Wilayah Persekutuan', desc: 'Cuti di KL, Putrajaya & Labuan.' },
+            { date: '2026-02-01', title: 'Thaipusam', desc: 'Cuti di Johor, KL, Negeri Sembilan, Perak, Pulau Pinang, Putrajaya & Selangor.' },
+            { date: '2026-02-17', title: 'Tahun Baru Cina', desc: 'Cuti Umum Kebangsaan Hari Pertama.' },
+            { date: '2026-02-18', title: 'Tahun Baru Cina (Hari Kedua)', desc: 'Cuti Umum Kebangsaan Hari Kedua.' },
+            { date: '2026-03-20', title: 'Hari Raya Aidilfitri', desc: 'Cuti Umum Kebangsaan (Jangkaan).' },
+            { date: '2026-03-21', title: 'Hari Raya Aidilfitri (Hari Kedua)', desc: 'Cuti Umum Kebangsaan Hari Kedua (Jangkaan).' },
+            { date: '2026-04-03', title: 'Good Friday', desc: 'Cuti bagi Sabah & Sarawak.' },
+            { date: '2026-05-01', title: 'Hari Pekerja', desc: 'Cuti Umum Kebangsaan hari buruh.' },
+            { date: '2026-05-27', title: 'Hari Raya Aidiladha', desc: 'Cuti Umum Kebangsaan Hari Raya Korban (Jangkaan).' },
+            { date: '2026-05-31', title: 'Hari Wesak', desc: 'Cuti Umum Kebangsaan menghormati agama Buddha.' },
+            { date: '2026-06-01', title: 'Hari Gawai Dayak', desc: 'Cuti Negeri Sarawak.' },
+            { date: '2026-06-08', title: 'Hari Keputeraan YDP Agong', desc: 'Cuti Umum Kebangsaan.' },
+            { date: '2026-06-16', title: 'Awal Muharram (Maal Hijrah)', desc: 'Cuti Umum Kebangsaan Tahun Baru Islam.' },
+            { date: '2026-08-25', title: 'Maulidur Rasul', desc: 'Cuti Umum Kebangsaan sambutan kelahiran Nabi Muhammad SAW.' },
+            { date: '2026-08-31', title: 'Hari Kebangsaan Malaysia', desc: 'Hari Kemerdekaan Malaysia Ke-69.' },
+            { date: '2026-09-16', title: 'Hari Malaysia', desc: 'Sambutan Penubuhan Malaysia.' },
+            { date: '2026-11-08', title: 'Hari Deepavali', desc: 'Pesta Cahaya (Cuti Umum kecuali Sarawak).' },
+            { date: '2026-12-25', title: 'Hari Krismas', desc: 'Cuti Umum Kebangsaan Hari Natal.' }
+        ];
+
+        const schoolHolidays2026 = [
+            { start: '2026-01-24', end: '2026-02-01', title: 'Cuti Akhir Penggal (2025/2026)', desc: 'Cuti Persekolahan Akhir Sesi Akademik.' },
+            { start: '2026-03-20', end: '2026-03-28', title: 'Cuti Penggal 1 & Hari Raya', desc: 'Cuti Penggal Pertama & Sambutan Hari Raya Aidilfitri.' },
+            { start: '2026-05-23', end: '2026-05-31', title: 'Cuti Penggal 2 (Penggal Awal)', desc: 'Cuti Pertengahan Tahun Sekolah.' },
+            { start: '2026-08-22', end: '2026-08-30', title: 'Cuti Penggal 2 (Fasa 2)', desc: 'Cuti Persekolahan Penggal Kedua.' },
+            { start: '2026-12-19', end: '2026-12-31', title: 'Cuti Akhir Tahun 2026', desc: 'Cuti Panjang Akhir Tahun Sekolah KPM.' }
+        ];
+
+        const kumpulanAStates = ['Johor', 'Kedah', 'Kelantan', 'Terengganu'];
+
+        const weatherDatabase = {
+            'Kuala Lumpur': { temp: 32, condition: 'Hujan Ribut', icon: 'thunder', humidity: '82%', wind: '12 km/h', rainChance: '70%', vis: '8 km', imsak: '05:42', subuh: '05:52', zohor: '13:20', asar: '16:42', maghrib: '19:30', isyak: '20:43' },
+            'Selangor': { temp: 31, condition: 'Berawan / Hujan Kebiasaan', icon: 'rain', humidity: '85%', wind: '10 km/h', rainChance: '65%', vis: '9 km', imsak: '05:43', subuh: '05:53', zohor: '13:21', asar: '16:43', maghrib: '19:31', isyak: '20:44' },
+            'Johor': { temp: 30, condition: 'Cerah Berawan', icon: 'cloud-sun', humidity: '78%', wind: '15 km/h', rainChance: '30%', vis: '10 km', imsak: '05:38', subuh: '05:48', zohor: '13:15', asar: '16:38', maghrib: '19:25', isyak: '20:38' },
+            'Penang': { temp: 33, condition: 'Panas & Cerah', icon: 'sun', humidity: '70%', wind: '18 km/h', rainChance: '15%', vis: '10 km', imsak: '05:48', subuh: '05:58', zohor: '13:26', asar: '16:48', maghrib: '19:35', isyak: '20:48' },
+            'Perak': { temp: 31, condition: 'Hujan Petang', icon: 'rain', humidity: '84%', wind: '9 km/h', rainChance: '60%', vis: '8 km', imsak: '05:46', subuh: '05:56', zohor: '13:24', asar: '16:46', maghrib: '19:33', isyak: '20:46' },
+            'Kedah': { temp: 34, condition: 'Panas Terik', icon: 'sun', humidity: '65%', wind: '14 km/h', rainChance: '10%', vis: '10 km', imsak: '05:50', subuh: '06:00', zohor: '13:28', asar: '16:50', maghrib: '19:37', isyak: '20:50' },
+            'Kelantan': { temp: 29, condition: 'Hujan Lembut', icon: 'rain', humidity: '88%', wind: '16 km/h', rainChance: '80%', vis: '7 km', imsak: '05:40', subuh: '05:50', zohor: '13:17', asar: '16:40', maghrib: '19:27', isyak: '20:40' },
+            'Terengganu': { temp: 30, condition: 'Berawan di Pantai', icon: 'cloud-sun', humidity: '80%', wind: '20 km/h', rainChance: '40%', vis: '10 km', imsak: '05:39', subuh: '05:49', zohor: '13:16', asar: '16:39', maghrib: '19:26', isyak: '20:39' },
+            'Pahang': { temp: 28, condition: 'Mendung', icon: 'cloud', humidity: '86%', wind: '11 km/h', rainChance: '50%', vis: '9 km', imsak: '05:41', subuh: '05:51', zohor: '13:18', asar: '16:41', maghrib: '19:28', isyak: '20:41' },
+            'Melaka': { temp: 32, condition: 'Cerah', icon: 'sun', humidity: '72%', wind: '13 km/h', rainChance: '20%', vis: '10 km', imsak: '05:42', subuh: '05:52', zohor: '13:20', asar: '16:43', maghrib: '19:30', isyak: '20:43' },
+            'Negeri Sembilan': { temp: 31, condition: 'Ribut Petir Sementara', icon: 'thunder', humidity: '83%', wind: '10 km/h', rainChance: '75%', vis: '8 km', imsak: '05:42', subuh: '05:52', zohor: '13:20', asar: '16:42', maghrib: '19:30', isyak: '20:43' },
+            'Sabah': { temp: 29, condition: 'Hujan Lokal', icon: 'rain', humidity: '85%', wind: '12 km/h', rainChance: '55%', vis: '9 km', imsak: '05:05', subuh: '05:15', zohor: '12:43', asar: '16:05', maghrib: '18:53', isyak: '20:06' },
+            'Sarawak': { temp: 30, condition: 'Berawan & Lembap', icon: 'cloud', humidity: '87%', wind: '11 km/h', rainChance: '45%', vis: '9 km', imsak: '05:22', subuh: '05:32', zohor: '13:00', asar: '16:22', maghrib: '19:10', isyak: '20:23' }
+        };
+
+        let currentDate = new Date();
+        currentDate.setFullYear(2026, 0, 15);
+        let selectedDateStr = '';
+        let personalNotes = JSON.parse(localStorage.getItem('malaysia_cal_notes_2026') || '{}');
+
+        let audioCtx = null;
+        let isWeatherSoundPlaying = false;
+        let activeNoiseNode = null;
+        let activeGainNode = null;
+
+        function initAudioContext() {
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+        }
+
+        function playWeatherSynth(iconType) {
+            initAudioContext();
+            stopWeatherSynth();
+            if (!isWeatherSoundPlaying) return;
+
+            const bufferSize = audioCtx.sampleRate * 2;
+            const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+            const output = buffer.getChannelData(0);
+
+            let b0 = 0, b1 = 0, b2 = 0, b3 = 0, b4 = 0, b5 = 0, b6 = 0;
+            for (let i = 0; i < bufferSize; i++) {
+                let white = Math.random() * 2 - 1;
+                b0 = 0.99886 * b0 + white * 0.0555179;
+                b1 = 0.99332 * b1 + white * 0.0750759;
+                b2 = 0.96900 * b2 + white * 0.1538520;
+                b3 = 0.86650 * b3 + white * 0.3104856;
+                b4 = 0.55000 * b4 + white * 0.5329522;
+                b5 = -0.7616 * b5 - white * 0.0168980;
+                output[i] = b0 + b1 + b2 + b3 + b4 + b5 + b6 + white * 0.5362;
+                output[i] *= 0.11; 
+                b6 = white * 0.115926;
+            }
+
+            let whiteNoise = audioCtx.createBufferSource();
+            whiteNoise.buffer = buffer;
+            whiteNoise.loop = true;
+
+            let filter = audioCtx.createBiquadFilter();
+            activeGainNode = audioCtx.createGain();
+
+            if (iconType === 'rain' || iconType === 'thunder') {
+                filter.type = 'lowpass';
+                filter.frequency.setValueAtTime(800, audioCtx.currentTime);
+                activeGainNode.gain.setValueAtTime(0.15, audioCtx.currentTime);
+                document.getElementById('currentSoundType').innerText = 'Bunyi Hujan Sintetik';
+            } else {
+                filter.type = 'lowpass';
+                filter.frequency.setValueAtTime(400, audioCtx.currentTime);
+                activeGainNode.gain.setValueAtTime(0.08, audioCtx.currentTime);
+                document.getElementById('currentSoundType').innerText = 'Bunyi Suasana Berawan';
+            }
+
+            whiteNoise.connect(filter);
+            filter.connect(activeGainNode);
+            activeGainNode.connect(audioCtx.destination);
+
+            whiteNoise.start();
+            activeNoiseNode = whiteNoise;
+        }
+
+        function stopWeatherSynth() {
+            if (activeNoiseNode) {
+                try {
+                    activeNoiseNode.stop();
+                    activeNoiseNode.disconnect();
+                } catch (e) {}
+                activeNoiseNode = null;
+            }
+        }
+
+        function toggleWeatherSound() {
+            isWeatherSoundPlaying = !isWeatherSoundPlaying;
+            const btnText = document.getElementById('weatherSoundText');
+            const btnIcon = document.getElementById('weatherSoundIcon');
+            const stateName = document.getElementById('stateSelect').value;
+            const w = weatherDatabase[stateName] || weatherDatabase['Kuala Lumpur'];
+
+            if (isWeatherSoundPlaying) {
+                btnText.innerText = 'Hentikan Bunyi';
+                btnIcon.className = 'fa-solid fa-volume-xmark text-sm';
+                playWeatherSynth(w.icon);
+            } else {
+                btnText.innerText = 'Mainkan Bunyi Cuaca';
+                btnIcon.className = 'fa-solid fa-volume-high text-sm';
+                stopWeatherSynth();
+                document.getElementById('currentSoundType').innerText = 'Bunyi Dihentikan';
+            }
+        }
+
+        function toggleMusic() {
+            const audio = document.getElementById('popMusicAudio');
+            const playIcon = document.getElementById('playMusicIcon');
+            const discIcon = document.getElementById('musicDiscIcon');
+
+            if (audio.paused) {
+                audio.play().then(() => {
+                    playIcon.className = 'fa-solid fa-pause text-xs';
+                    discIcon.classList.add('animate-spin');
+                }).catch(err => console.log(err));
+            } else {
+                audio.pause();
+                playIcon.className = 'fa-solid fa-play text-xs';
+                discIcon.classList.remove('animate-spin');
+            }
+        }
+
+        window.onload = function() {
+            renderTodayInfo();
+            changeState();
+            renderCalendar();
+        };
+
+        function formatDate(d) {
+            const year = d.getFullYear();
+            const month = String(d.getMonth() + 1).padStart(2, '0');
+            const day = String(d.getDate()).padStart(2, '0');
+            return `${year}-${month}-${day}`;
+        }
+
+        function changeState() {
+            const selectedState = document.getElementById('stateSelect').value;
+            updateWeather(selectedState);
+            
+            const kumpulanSpan = document.getElementById('kumpulanState');
+            if (kumpulanAStates.includes(selectedState)) {
+                kumpulanSpan.innerText = 'Kumpulan A (Jumaat/Sabtu)';
+            } else {
+                kumpulanSpan.innerText = 'Kumpulan B (Sabtu/Ahad)';
+            }
+        }
+
+        function updateWeather(stateName) {
+            const w = weatherDatabase[stateName] || weatherDatabase['Kuala Lumpur'];
+            
+            document.getElementById('weatherLocation').innerText = stateName;
+            document.getElementById('weatherDesc').innerText = w.condition;
+            document.getElementById('tempDisplay').innerText = w.temp;
+            document.getElementById('feelsLike').innerText = `Rasa seperti ${w.temp + 3}°C`;
+            document.getElementById('humidityDisplay').innerText = w.humidity;
+            document.getElementById('windDisplay').innerText = w.wind;
+            document.getElementById('rainChanceDisplay').innerText = w.rainChance;
+            document.getElementById('visibilityDisplay').innerText = w.vis;
+
+            document.getElementById('solatImsak').innerText = w.imsak;
+            document.getElementById('solatSubuh').innerText = w.subuh;
+            document.getElementById('solatZohor').innerText = w.zohor;
+            document.getElementById('solatAsar').innerText = w.asar;
+            document.getElementById('solatMaghrib').innerText = w.maghrib;
+            document.getElementById('solatIsyak').innerText = w.isyak;
+
+            if(document.getElementById('widgetLoc')) {
+                document.getElementById('widgetLoc').innerText = stateName;
+                document.getElementById('widgetTemp').innerText = `${w.temp}°C`;
+                document.getElementById('widgetSubuh').innerText = w.subuh;
+                document.getElementById('widgetZohor').innerText = w.zohor;
+                document.getElementById('widgetMaghrib').innerText = w.maghrib;
+            }
+
+            if (isWeatherSoundPlaying) {
+                playWeatherSynth(w.icon);
+            }
+
+            const svgContainer = document.getElementById('weatherSvgContainer');
+            if (w.icon === 'sun') {
+                svgContainer.innerHTML = `<svg class="w-full h-full" viewBox="0 0 200 200" preserveAspectRatio="none"><circle cx="160" cy="50" r="35" fill="#f59e0b" class="animate-pulse-slow" /></svg>`;
+            } else if (w.icon === 'thunder') {
+                svgContainer.innerHTML = `<svg class="w-full h-full" viewBox="0 0 200 200" preserveAspectRatio="none"><polygon points="90,110 75,145 92,145 80,180 115,130 98,130" fill="#facc15" class="animate-bounce" /></svg>`;
+            } else {
+                svgContainer.innerHTML = `<svg class="w-full h-full" viewBox="0 0 200 200" preserveAspectRatio="none"><circle cx="140" cy="50" r="28" fill="#fbbf24" /></svg>`;
+            }
+        }
+
+        function renderTodayInfo() {
+            const today = new Date();
+            const todayStr = formatDate(today);
+            const isSchoolHol = schoolHolidays2026.some(h => todayStr >= h.start && todayStr <= h.end);
+            const schoolStatusEl = document.getElementById('schoolStatusToday');
+            if (isSchoolHol) {
+                schoolStatusEl.innerText = 'Cuti Sekolah';
+                schoolStatusEl.className = 'font-bold text-amber-400';
+            } else {
+                schoolStatusEl.innerText = 'Hari Persekolahan';
+                schoolStatusEl.className = 'font-bold text-emerald-400';
+            }
+        }
+
+        function renderCalendar() {
+            const year = currentDate.getFullYear();
+            const month = currentDate.getMonth();
+            const monthNamesMalay = ['Januari', 'Februari', 'Mac', 'April', 'Mei', 'Jun', 'Julai', 'Ogos', 'September', 'Oktober', 'November', 'Disember'];
+
+            document.getElementById('calendarMonthYear').innerText = `${monthNamesMalay[month]} ${year}`;
+
+            const firstDayIndex = new Date(year, month, 1).getDay();
+            const lastDay = new Date(year, month + 1, 0).getDate();
+            const prevLastDay = new Date(year, month, 0).getDate();
+
+            const grid = document.getElementById('calendarGrid');
+            grid.innerHTML = '';
+
+            for (let i = firstDayIndex; i > 0; i--) {
+                const dayNum = prevLastDay - i + 1;
+                const div = document.createElement('div');
+                div.className = 'min-h-[85px] p-2 rounded-2xl bg-slate-900/30 border border-slate-800/40 text-slate-600 text-xs font-medium';
+                div.innerText = dayNum;
+                grid.appendChild(div);
+            }
+
+            const todayStr = formatDate(new Date());
+
+            for (let day = 1; day <= lastDay; day++) {
+                const dateObj = new Date(year, month, day);
+                const dateStr = formatDate(dateObj);
+                const dayOfWeek = dateObj.getDay();
+
+                const holiday = publicHolidays2026.find(h => h.date === dateStr);
+                const schoolHol = schoolHolidays2026.find(s => dateStr >= s.start && dateStr <= s.end);
+                const hasNote = personalNotes[dateStr];
+
+                const dayCard = document.createElement('div');
+                let cardStyle = 'min-h-[85px] p-2 rounded-2xl border transition calendar-day-hover flex flex-col justify-between cursor-pointer ';
+
+                if (dateStr === todayStr) {
+                    cardStyle += 'bg-blue-900/50 border-blue-400 ring-2 ring-blue-400/50 ';
+                } else if (holiday) {
+                    cardStyle += 'bg-rose-950/40 border-rose-600/60 ';
+                } else if (schoolHol) {
+                    cardStyle += 'bg-amber-950/30 border-amber-500/50 ';
+                } else {
+                    cardStyle += 'bg-slate-800/50 border-slate-700/60 hover:bg-slate-800 ';
+                }
+
+                dayCard.className = cardStyle;
+                dayCard.onclick = () => openDayModal(dateStr, holiday, schoolHol);
+
+                let numClass = 'font-bold text-sm ';
+                if (dayOfWeek === 0) numClass += 'text-rose-400';
+                else if (dayOfWeek === 6) numClass += 'text-amber-400';
+                else numClass += 'text-slate-200';
+
+                let innerHTML = `<div class="flex justify-between items-center">
+                    <span class="${numClass}">${day}</span>
+                    <div class="flex items-center gap-1">
+                        ${hasNote ? '<span class="w-2 h-2 rounded-full bg-blue-400" title="Ada Nota"></span>' : ''}
+                        ${dateStr === todayStr ? '<span class="text-[9px] bg-blue-500 text-white font-extrabold px-1.5 py-0.5 rounded-md">HARI INI</span>' : ''}
+                    </div>
+                </div>`;
+
+                innerHTML += '<div class="mt-1 space-y-1">';
+                if (holiday) {
+                    innerHTML += `<div class="bg-rose-600/80 text-white text-[10px] font-semibold p-1 rounded-lg truncate"><i class="fa-solid fa-star mr-1 text-[8px]"></i>${holiday.title}</div>`;
+                }
+                if (schoolHol) {
+                    innerHTML += `<div class="bg-amber-600/70 text-white text-[9px] font-semibold px-1 py-0.5 rounded-lg truncate"><i class="fa-solid fa-graduation-cap mr-1 text-[8px]"></i>Cuti Sekolah</div>`;
+                }
+                if (hasNote) {
+                    innerHTML += `<div class="bg-blue-600/70 text-white text-[9px] font-semibold px-1 py-0.5 rounded-lg truncate"><i class="fa-solid fa-note-sticky mr-1 text-[8px]"></i>${hasNote}</div>`;
+                }
+                innerHTML += '</div>';
+
+                dayCard.innerHTML = innerHTML;
+                grid.appendChild(dayCard);
+            }
+
+            renderMonthHolidaysList(month);
+            renderSchoolHolidaysList();
+        }
+
+        function renderMonthHolidaysList(monthIndex) {
+            const listEl = document.getElementById('publicHolidaysList');
+            const badgeEl = document.getElementById('holidayCountBadge');
+            listEl.innerHTML = '';
+
+            const filtered = publicHolidays2026.filter(h => new Date(h.date).getMonth() === monthIndex);
+            badgeEl.innerText = `${filtered.length} Cuti`;
+
+            if (filtered.length === 0) {
+                listEl.innerHTML = '<li class="text-slate-500 text-xs italic py-2">Tiada cuti umum pada bulan ini.</li>';
+                return;
+            }
+
+            filtered.forEach(h => {
+                const dateFormatted = new Date(h.date).toLocaleDateString('ms-MY', { day: 'numeric', month: 'long', year: 'numeric' });
+                const li = document.createElement('li');
+                li.className = 'bg-slate-800/80 p-3 rounded-2xl border border-rose-500/25 flex items-center justify-between cursor-pointer hover:border-rose-500/50 transition';
+                li.onclick = () => openDayModal(h.date, h, null);
+                li.innerHTML = `
+                    <div class="flex items-center space-x-3">
+                        <div class="w-2.5 h-2.5 rounded-full bg-rose-500"></div>
+                        <div>
+                            <p class="font-bold text-slate-100">${h.title}</p>
+                            <p class="text-xs text-rose-300/80">${dateFormatted}</p>
+                        </div>
+                    </div>
+                    <i class="fa-solid fa-chevron-right text-xs text-slate-500"></i>
+                `;
+                listEl.appendChild(li);
+            });
+        }
+
+        function renderSchoolHolidaysList() {
+            const listEl = document.getElementById('schoolHolidaysList');
+            listEl.innerHTML = '';
+
+            schoolHolidays2026.forEach(s => {
+                const startDate = new Date(s.start).toLocaleDateString('ms-MY', { day: 'numeric', month: 'short' });
+                const endDate = new Date(s.end).toLocaleDateString('ms-MY', { day: 'numeric', month: 'short', year: 'numeric' });
+                const li = document.createElement('li');
+                li.className = 'bg-slate-800/80 p-3 rounded-2xl border border-amber-500/25 flex items-center justify-between';
+                li.innerHTML = `
+                    <div class="flex items-center space-x-3">
+                        <div class="p-2 rounded-xl bg-amber-500/20 text-amber-400 text-xs"><i class="fa-solid fa-umbrella-beach"></i></div>
+                        <div>
+                            <p class="font-bold text-slate-100 text-xs">${s.title}</p>
+                            <p class="text-[11px] text-amber-300">${startDate} - ${endDate}</p>
+                        </div>
+                    </div>
+                `;
+                listEl.appendChild(li);
+            });
+        }
+
+        function changeMonth(offset) {
+            currentDate.setMonth(currentDate.getMonth() + offset);
+            renderCalendar();
+        }
+
+        function goToToday() {
+            currentDate = new Date();
+            currentDate.setFullYear(2026);
+            renderCalendar();
+        }
+
+        function openDayModal(dateStr, holiday, schoolHol) {
+            selectedDateStr = dateStr;
+            const modal = document.getElementById('eventModal');
+            document.getElementById('modalDate').innerText = new Date(dateStr).toLocaleDateString('ms-MY', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+            
+            const modalTitle = document.getElementById('modalTitle');
+            const modalContent = document.getElementById('modalContent');
+            const modalIcon = document.getElementById('modalIcon');
+            const noteInput = document.getElementById('personalNoteInput');
+            const noteDisplay = document.getElementById('savedNoteDisplay');
+
+            noteInput.value = personalNotes[dateStr] || '';
+            noteDisplay.innerText = personalNotes[dateStr] ? `Nota Disimpan: ${personalNotes[dateStr]}` : '';
+
+            if (holiday) {
+                modalTitle.innerText = holiday.title;
+                modalIcon.className = 'p-3 rounded-2xl bg-rose-500/20 text-rose-400 text-xl';
+                modalIcon.innerHTML = '<i class="fa-solid fa-gift"></i>';
+                modalContent.innerHTML = `<p class="font-semibold text-rose-300">Cuti Umum / Perayaan</p><p>${holiday.desc}</p>`;
+            } else if (schoolHol) {
+                modalTitle.innerText = schoolHol.title;
+                modalIcon.className = 'p-3 rounded-2xl bg-amber-500/20 text-amber-400 text-xl';
+                modalIcon.innerHTML = '<i class="fa-solid fa-graduation-cap"></i>';
+                modalContent.innerHTML = `<p class="font-semibold text-amber-300">Cuti Penggal Sekolah KPM</p><p>${schoolHol.desc}</p>`;
+            } else {
+                modalTitle.innerText = 'Hari Biasa';
+                modalIcon.className = 'p-3 rounded-2xl bg-blue-500/20 text-blue-400 text-xl';
+                modalIcon.innerHTML = '<i class="fa-solid fa-calendar-day"></i>';
+                modalContent.innerHTML = `<p>Tiada cuti umum atau cuti sekolah rasmi pada tarikh ini.</p>`;
+            }
+
+            modal.classList.remove('hidden');
+        }
+
+        function savePersonalNote() {
+            const val = document.getElementById('personalNoteInput').value.trim();
+            if (val) {
+                personalNotes[selectedDateStr] = val;
+            } else {
+                delete personalNotes[selectedDateStr];
+            }
+            localStorage.setItem('malaysia_cal_notes_2026', JSON.stringify(personalNotes));
+            document.getElementById('savedNoteDisplay').innerText = val ? `Nota Disimpan: ${val}` : '';
+            renderCalendar();
+        }
+
+        function closeModal() {
+            document.getElementById('eventModal').classList.add('hidden');
+        }
+
+        function toggleWidgetPreviewModal() {
+            const modal = document.getElementById('widgetModal');
+            modal.classList.toggle('hidden');
         }
     </script>
 </body>
 </html>
+```
