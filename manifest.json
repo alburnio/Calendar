@@ -1,14 +1,19 @@
 {
-  "name": "Calendar",
-  "short_name": "Calendar",
+  "name": "Kalendar & Cuaca Malaysia 2026",
+  "short_name": "Kalendar",
   "start_url": "./index.html",
   "display": "standalone",
-  "background_color": "#ffffff",
-  "theme_color": "#000000",
+  "background_color": "#0f172a",
+  "theme_color": "#0f172a",
   "icons": [
     {
       "src": "icon-192.png.jpg",
       "sizes": "192x192",
+      "type": "image/jpeg"
+    },
+    {
+      "src": "icon-192.png.jpg",
+      "sizes": "512x512",
       "type": "image/jpeg"
     }
   ]
